@@ -2,6 +2,7 @@ const { response, json } = require('express');
 const bsync = require('bcryptjs');
 const User = require('../model/user');
 const { generateJwt } = require('../helpers/jwt');
+const jwt = require('../helpers/jwt');
 
 const createUser = async (req, res = response) => {
 
@@ -39,6 +40,58 @@ const createUser = async (req, res = response) => {
 
 }
 
+const loginUser = async (req, res = response) => {
+    const { email, password } = req.body;
+    try {
+        const userDb = await User.findOne({ email });
+        if (!userDb) {
+            return res.status(401).json({
+                ok: false,
+                msg: 'Error de credenciales'
+            })
+        }
+
+        const okPassword = bsync.compareSync(password, userDb.password);
+        if (!okPassword) {
+            return res.status(401).json({
+                ok: false,
+                msg: 'Error de credenciales'
+            })
+        }
+
+        const token = await generateJwt(userDb.id);
+
+        res.json({
+            ok: true,
+            msg: 'Inició sesion',
+            token
+        })
+
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({
+            ok: false,
+            msg: 'Error interno, por favor comuniquese con el administrador',
+            body: req.body
+        });
+    }
+}
+
+const validateJwt = async (req, res = response) => {
+    const uid = req.uid;
+    const token = await jwt.generateJwt(uid);
+    const user = await User.findById(uid);
+
+    return res.json({
+        ok: true,
+        uid,
+        user,
+        token
+    })
+}
+
 module.exports = {
-    createUser
+    createUser,
+    loginUser,
+    validateJwt
 }
