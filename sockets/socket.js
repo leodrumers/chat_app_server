@@ -1,3 +1,4 @@
+const { changeUserStatus } = require('../controller/change_user_status');
 const { comprobarJwt } = require('../helpers/jwt');
 const { io } = require('../index');
 
@@ -12,9 +13,11 @@ io.on('connection', client => {
     if (!valid_client) { return client.disconnect(); }
 
     console.log("Cliente conectado");
+    changeUserStatus(uid, true);
 
     client.on('disconnect', () => {
         console.log('Cliente desconectado');
+        changeUserStatus(uid, false)
     });
 
     client.on('mensaje', (payload) => {
